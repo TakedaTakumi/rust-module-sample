@@ -1,0 +1,14 @@
+services:
+  rust:
+    user: $UID:$GID
+    build:
+      context: .
+      dockerfile: Dockerfile.local
+      network: host
+      args:
+        - UID=$UID
+        - GID=$GID
+        - USERNAME=$USERNAME
+    volumes:
+      - .:/workspace
+    tty: true

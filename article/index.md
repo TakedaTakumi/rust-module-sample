@@ -251,3 +251,71 @@ use domain::{entity::node::Node, value_object::id::ID};
 
 次のステップでは、モジュール構成をスッキリさせましょう。
 
+## Step04: モジュール構成をスッキリさせる
+
+`entity.rs`などで使用している`pub mod XXX`という書き方は、XXXというモジュールをインポートして公開するという意味でした。
+しかし、今回は`node`などのモジュールは公開したくありません。
+では、どうすればいいのか。
+`pub use XXX`を使いましょう。
+
+ディレクトリ構成はStep03のままで、各ファイルを修正します。
+
+こんな風に修正しましょう。
+
+```rust
+// src/domain/entity.rs
+mod node;
+
+pub use node::Node;
+```
+こうするとこで、`node`モジュールは非公開にしつつ、`Node`構造体を公開することができます。
+`value_object.rs`も同様に修正します。
+
+```rust
+// src/domain/value_object.rs
+mod id;
+
+pub use id::ID;
+```
+
+これだけで、インポートしているコードはこうなります。
+```rust
+// src/domain/entity/node.rs
+use crate::domain::value_object::ID;
+
+#[derive(Debug)]
+pub struct Node {
+    #[allow(dead_code)]
+    id: ID,
+    #[allow(dead_code)]
+    label: String,
+}
+impl Node {
+    pub fn new(id: ID, label: &str) -> Self {
+        Self {
+            id,
+            label: label.to_string(),
+        }
+    }
+}
+```
+```rust
+mod domain;
+use domain::{entity::Node, value_object::ID};
+
+fn main() {
+    let node = Node::new(ID::new("1"), "Node 1");
+
+    println!("Hello, module: {:?}", node);
+}
+```
+
+不要なモジュールが消えて`use`の部分がスッキリしましたね！
+```rust
+use domain::{entity::Node, value_object::ID};
+```
+
+これで、ディレクトリやファイル分割は自由にできるようになったかと思います。
+
+
+

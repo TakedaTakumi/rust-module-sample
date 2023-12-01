@@ -1,9 +1,10 @@
 # rustのmoduleと仲良くなる
 
 ## はじめに
-rustでは、フォルダやファイルが[モジュールとして扱われます](https://doc.rust-jp.rs/book-ja/ch07-05-separating-modules-into-different-files.html)。
+rustでは、ディレクトリやファイルが[モジュールとして扱われます](https://doc.rust-jp.rs/book-ja/ch07-05-separating-modules-into-different-files.html)。
 rustのモジュールは、よくわからず色々調べて回ったところなので、備忘録を兼ねてまとめておきます。
 ステップバイステップで書いていこうと思っています。
+誰かの役に立てたら嬉しいな。
 
 リポジトリはこちらです。
 https://github.com/TakedaTakumi/rust-module-sample
@@ -12,6 +13,14 @@ https://github.com/TakedaTakumi/rust-module-sample
 
 ## Step01: モジュールを使わない。
 まずは、モジュールを使わないでコードを書いてみます。
+最初の構成はこんな感じです。
+```
+.
+├── Cargo.toml
+└── src
+    └── main.rs
+```
+
 `src/main.rs`に以下のコードを書きます。
 
 ```rust
@@ -133,4 +142,111 @@ fn main() {
 ここでは、`use`の代わりに、`mod`を使った例を示します。
 これで`node`モジュールと`id`モジュールが使えるようになりました。
 6行目については「`node`モジュール内の`Node`構造体の`new`スタティック関数を実行する～」のような意味になります。
+
+## Step03: ディレクトリ分割
+次に、ディレクトリ分割をしてみましょう。
+今のままでは、エンティティや値オブジェクトが増えるたびに管理が難しくなるので、種類ごとにディレクトリ分けしましょう。
+
+こんな構成にしてみました。
+```
+.
+├── Cargo.toml
+└── src
+    ├── domain               # 追加
+    │   ├── entity          # 追加
+    │   │   └── node.rs    ## 移動
+    │   └── value_object    # 追加
+    │       └── id.rs       ## 移動
+    └── main.rs
+```
+
+しかし、このままではnodeやidのモジュール（rsファイル）を認識してくれません。
+rustでは、ディレクトリもモジュールになるわけですが、モジュールとして認識させるためには、ディレクトリと同名のrsファイルが必要になります。
+
+こうなります。
+```
+.
+├── Cargo.toml
+└── src
+    ├── domain
+    │   ├── entity
+    │   │   └── node.rs
+    │   ├── entity.rs          # 追加
+    │   ├── value_object
+    │   │   └── id.rs
+    │   └── value_object.rs    # 追加
+    ├── domain.rs               # 追加
+    └── main.rs
+```
+
+それぞれのファイルでは、下位のモジュールをインポートしてエクスポートするように記載します。
+
+TypeScriptでいう、`export AAA from 'XXX'`のようなイメージです。
+`pub mod XXX`と書きます。
+
+```rust
+// src/domain/value_object.rs
+pub mod id;
+```
+```rust
+// src/domain/entity.rs
+pub mod node;
+```
+```rust
+// src/domain.rs
+pub mod entity;
+pub mod value_object;
+```
+
+`node.rs`もインポートしているIDの場所が変わったので、修正します。
+増えたディレクトリ分だけモジュールを追加しましょう。
+```rust
+// src/domain/entity/node.rs
+use crate::domain::value_object::id::ID;    // ここを修正
+
+#[derive(Debug)]
+pub struct Node {
+    id: ID,
+    label: String,
+}
+impl Node {
+    pub fn new(id: ID, label: &str) -> Self {
+        Self {
+            id,
+            label: label.to_string(),
+        }
+    }
+}
+```
+
+この調子で`main.rs`も修正しましょう。
+
+```rust
+// src/main.rs
+mod domain;
+use domain::{entity::node::Node, value_object::id::ID};
+
+fn main() {
+    let node = Node::new(ID::new("1"), "Node 1");
+
+    println!("Hello, module: {:?}", node);
+}
+```
+
+構造体を使用するたびにモジュールまで書いているとやってられないので、`use`を使ってインポートしています。
+モジュールに共通部分がある場合、このような書き方もできます。
+
+さて、ファイル分割と、ディレクトリ分割が上手くいったので、ここで終わらせてしまってもいいんですが、上のコード、ちょっと気になりませんか？
+私はとっても気になります！
+
+```rust
+use domain::{entity::node::Node, value_object::id::ID};
+```
+`domain`や`entity`, `value_object`まではいいんですが、`node`や`id`って、なんか冗長だなぁと思うんですよ。
+いらんだろ、と。
+
+[公式（の非公式和訳）](https://doc.rust-jp.rs/book-ja/ch07-05-separating-modules-into-different-files.html)には詳しく書いてなかったんですが、方法があります！
+（あとで読み返して気付いたけど、たぶん最後の「まとめ」のところに書いてあることが該当するのかな、と思ってる。読解力……！）
+
+次のステップでは、モジュール構成をスッキリさせましょう。
 

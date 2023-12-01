@@ -316,6 +316,126 @@ use domain::{entity::Node, value_object::ID};
 ```
 
 これで、ディレクトリやファイル分割は自由にできるようになったかと思います。
+ここで終了でもいいのですが、もう1Stepだけお付き合いください。
+IDの配列を扱うことを考えてみましょう。
+
+## Step05: ID配列を管理するドメインオブジェクトを作る
+
+IDの配列をたんに`Vec<ID>`で扱ってもいいのですが、せっかくなので、ファーストクラスコレクションを作ってみましょう。
+
+実装はこんな感じでしょうか。
+関数は取り急ぎ、初期化のみ実装しています。
+```rust
+#[derive(Debug)]
+pub struct IdCollection {
+    value: Vec<ID>,
+}
+impl IdCollection {
+    pub fn new() -> Self {
+        Self {
+            value: Vec::new(),
+        }
+    }
+}
+```
+
+では、これをどこに置きましょうか。
+IDのコレクションなんだから`id.rs`に書きますか。それとも、値オブジェクトを持つミュータブルなエンティティなので、`entity/id_collection.rs`を作りましょうか。
+
+色々と考えられますが、現状の私の考えは以下のような構成です。
+```
+.
+├── Cargo.toml
+└── src
+    ├── domain
+    │   ├── entity
+    │   │   └── node.rs
+    │   ├── entity.rs
+    │   ├── value_object
+    │   │   ├── id                  # 追加
+    │   │   │   ├── collection.rs   # 追加
+    │   │   │   └── id.rs           # 移動：元はvalue_object/id.rs
+    │   │   └── id.rs               # 追加
+    │   └── value_object.rs
+    ├── domain.rs
+    └── main.rs
+```
+
+ファイルが増えてしまいますが、`ID`と`IdCollection`は近い距離の置いておきたい。でも、別ファイルにしたい。ということで、このような構成にしました。
+`IdCollection`は値オブジェクトではないんでは、という気もしますが、今はこれで良しとしています。
+
+この構成の是非はあるかと思いますが、これを実現するとしたら、このように修正します。
+まず、元々あった`value_object/id.rs`は`value_object/id/id.rs`に移動します。
+移動するだけで、中身の変更はありません。
+
+他はこのような感じです。
+```rust
+// src/domain/value_object/id/collection.rs
+use super::ID;
+
+#[derive(Debug)]
+pub struct IdCollection {
+    value: Vec<ID>,
+}
+impl IdCollection {
+    pub fn new() -> Self {
+        Self {
+            value: Vec::new(),
+        }
+    }
+}
+```
+`ID`は同一モジュールに存在するので、`super`で親モジュールを指定しています。
+
+```rust
+// src/domain/value_object/id.rs
+mod collection;
+mod id;
+
+pub use collection::IdCollection;
+pub use id::ID;
+```
+構造体だけを公開します。
+
+既存のファイルでは、`src/domain/value_object.rs`の修正が必要です。
+修正と言っても、新たに追加された`IdCollection`を追加するだけです。
+
+```rust
+// src/domain/value_object.rs
+mod id;
+
+pub use id::IdCollection;   // 追加
+pub use id::ID;
+```
+
+`ID`の場所が変わりましたが、`pub use`を使って`value_object`直下にいるように見せていたので、`node.rs`に修正の必要はありません。
+
+`main.rs`から`IdCollection`を使ってみましょう。
+
+```rust
+// /src/main.rs
+mod domain;
+use domain::{
+    entity::Node,
+    value_object::{IdCollection, ID},
+};
+
+fn main() {
+    let list = IdCollection::new();
+    let node = Node::new(ID::new("1"), "Node 1");
+
+    println!("Hello, module: {:?}", node);
+    println!("list: {:?}", list);
+}
+```
+
+出力はこうなります。
+```
+Hello, module: Node { id: ID { value: "1" }, label: "Node 1" }
+list: IdCollection { value: [] }
+```
+素敵ですね！
+
 
 
 

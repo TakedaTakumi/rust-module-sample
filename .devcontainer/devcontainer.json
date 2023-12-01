@@ -23,7 +23,9 @@
       "settings": {
         "cSpell.words": [
           "devcontainer",
-          "lcov"
+          "lcov",
+          "struct",
+          "println"
         ],
         "cSpell.ignorePaths": [
           "vscode-extension",

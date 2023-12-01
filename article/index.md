@@ -121,7 +121,7 @@ impl Node {
 2行目は`mod`と同じく、TypeScriptでいうところの`import`である`use`です。
 `mod`との違いは、モジュールではなく、構造体をインポートするということです。
 意味としては、「`crate`直下の`id`モジュール内の`ID`構造体を使用可能にする」というところでしょうか。
-
+ファイル名がモジュール名になるので、このようになります。
 
 このファイルを`main.rs`からインポートします。
 
@@ -152,9 +152,9 @@ fn main() {
 .
 ├── Cargo.toml
 └── src
-    ├── domain               # 追加
+    ├── domain              # 追加
     │   ├── entity          # 追加
-    │   │   └── node.rs    ## 移動
+    │   │   └── node.rs     ## 移動
     │   └── value_object    # 追加
     │       └── id.rs       ## 移動
     └── main.rs
@@ -171,10 +171,10 @@ rustでは、ディレクトリもモジュールになるわけですが、モ�
     ├── domain
     │   ├── entity
     │   │   └── node.rs
-    │   ├── entity.rs          # 追加
+    │   ├── entity.rs           # 追加
     │   ├── value_object
     │   │   └── id.rs
-    │   └── value_object.rs    # 追加
+    │   └── value_object.rs     # 追加
     ├── domain.rs               # 追加
     └── main.rs
 ```
@@ -239,13 +239,14 @@ fn main() {
 さて、ファイル分割と、ディレクトリ分割が上手くいったので、ここで終わらせてしまってもいいんですが、上のコード、ちょっと気になりませんか？
 私はとっても気になります！
 
+この部分です。
 ```rust
 use domain::{entity::node::Node, value_object::id::ID};
 ```
 `domain`や`entity`, `value_object`まではいいんですが、`node`や`id`って、なんか冗長だなぁと思うんですよ。
 いらんだろ、と。
 
-[公式（の非公式和訳）](https://doc.rust-jp.rs/book-ja/ch07-05-separating-modules-into-different-files.html)には詳しく書いてなかったんですが、方法があります！
+[公式（の非公式和訳）](https://doc.rust-jp.rs/book-ja/ch07-05-separating-modules-into-different-files.html)には詳しく書いてなかったんですが、方法があります！  
 （あとで読み返して気付いたけど、たぶん最後の「まとめ」のところに書いてあることが該当するのかな、と思ってる。読解力……！）
 
 次のステップでは、モジュール構成をスッキリさせましょう。

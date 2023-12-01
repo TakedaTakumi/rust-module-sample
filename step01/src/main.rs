@@ -1,5 +1,6 @@
 #[derive(Debug)]
 struct ID {
+    #[allow(dead_code)]
     value: String,
 }
 impl ID {
@@ -12,7 +13,9 @@ impl ID {
 
 #[derive(Debug)]
 struct Node {
+    #[allow(dead_code)]
     id: ID,
+    #[allow(dead_code)]
     label: String,
 }
 impl Node {
